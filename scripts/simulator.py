@@ -60,57 +60,54 @@ class Simulator:
         xp, yp = self.to_xy(ip, jp)
         return xp, yp, is_hit
     
-    #bresenham method is used to plot the lines (see references)
+    #bresenham method is used to plot the lines
     def bresenham (self, i0, j0, i1, j1, max_dist_cells, debug=False):   # i0, j0 (starting point)
         dx = np.absolute(j1-j0)
         dy = -1 *  np.absolute(i1-i0)
-        
         sx = -1
         if j0<j1:
             sx = 1
-
         sy = -1
         if i0<i1:
             sy = 1
-
         jp, ip = j0, i0
         err = dx+dy                     # error value e_xy
         while True:                     # loop
-
             if (jp == j1 and ip == i1) or (np.sqrt((jp-j0)**2+(ip-i0)**2) >= max_dist_cells) or not self.is_inside(ip, jp):  
                 return ip, jp, False
             elif self.gridmap[int(ip)][int(jp)]==1:
                 return ip, jp, True
-
             if debug:
                 self.gridmap[int(ip)][int(jp)] = 0.5
-
             e2 = 2*err
             if e2 >= dy:                # e_xy+e_x > 0 
                 err += dy
                 jp += sx
-            
             if e2 <= dx:                # e_xy+e_y < 0
                 err += dx
                 ip += sy
 
 class SimulatorROS:
     def __init__(self):
-        dt = 0.1
-        resolution = 0.1
-        laser_min_angle = -135
-        laser_max_angle=135
-        laser_resolution=1
-        laser_max_dist=50.0
-
-        simulator = Simulator("map.png", resolution, laser_min_angle, laser_max_angle, laser_resolution, laser_max_dist)
-        simulator.set_robot_pos(1.5, 1.5, np.radians(45)) # robot start point
-
         self.cmdvel_queue = []
 
         rospy.init_node('RosSimulator', anonymous=True)
-        laser_pub = rospy.Publisher('scan', LaserScan, queue_size=10)
-        rospy.Subscriber("cmd_vel", Twist, cmdvel_callback)
+        self.map_resolution = rospy.get_param('~map_resolution', 0.1)
+        self.time_resolution = rospy.get_param('~time_resolution', 0.1) # dt
+        self.laser_min_angle = rospy.get_param('~laser_min_angle', -135)
+        self.laser_max_angle = rospy.get_param('~laser_max_angle', 135)
+        self.laser_resolution = rospy.get_param('~laser_resolution', 1)
+        self.laser_max_dist = rospy.get_param('~laser_max_dist', 15.0)
+        self.robot_pos_x = rospy.get_param('~robot_pos_x', 1.5)
+        self.robot_pos_y = rospy.get_param('~robot_pos_y', 1.5)
+        self.robot_pos_theta = rospy.get_param('~robot_pos_theta', 45)
+        self.map_file = rospy.get_param('~map_file', 'map.png')
+
+        self.simulator = Simulator(self.map_file, self.map_resolution, self.laser_min_angle, self.laser_max_angle, self.laser_resolution, self.laser_max_dist)
+        self.simulator.set_robot_pos(self.robot_pos_x, self.robot_pos_y, np.radians(self.robot_pos_theta)) # robot start point
+
+        self.laser_pub = rospy.Publisher('scan', LaserScan, queue_size=2)
+        self.cmd_sub = rospy.Subscriber("cmd_vel", Twist, self.cmdvel_callback)
 
     def publish_laserscan(self, data):
         scan = LaserScan()
@@ -121,24 +118,26 @@ class SimulatorROS:
         scan.angle_increment = np.radians(laser_resolution)
         scan.range_max = laser_max_dist
         scan.ranges = data
-        laser_pub.publish(scan)
+        self.laser_pub.publish(scan)
 
     def process_cmdvel(self, cmdvel_list):
         if len(cmdvel_list)>0:
             new_dt = dt / len(cmdvel_list)
             for i in cmdvel_list:
-                simulator.robot_theta += i['ang'] * new_dt
-                simulator.robot_x += i['lin'] * np.cos(simulator.robot_theta) * new_dt
-                simulator.robot_y += i['lin'] * np.sin(simulator.robot_theta) * new_dt
+                self.simulator.robot_theta += i['ang'] * new_dt
+                self.simulator.robot_x += i['lin'] * np.cos(self.simulator.robot_theta) * new_dt
+                self.simulator.robot_y += i['lin'] * np.sin(self.simulator.robot_theta) * new_dt
             self.cmdvel_queue = []
 
     def cmdvel_callback(self, data):
         self.cmdvel_queue.append({'lin': data.linear.x, 'ang': data.angular.z})
 
+    def spin():
+        rate = rospy.Rate(1.0/dt)
+        while not rospy.is_shutdown():
+            process_cmdvel(cmdvel_queue)
+            publish_laserscan( self.simulator.get_measurements(debug=True) )
+            rate.sleep()
 
-
-rate = rospy.Rate(1.0/dt)
-while not rospy.is_shutdown():
-    process_cmdvel(cmdvel_queue)
-    publish_laserscan( simulator.get_measurements(debug=True) )
-    rate.sleep()
+sim = SimulatorROS()
+sim.spin()
