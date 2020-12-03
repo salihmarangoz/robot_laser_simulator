@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+
+<launch>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find basic_ros_simulator)/launch/rviz.rviz"/>
+  <node name="ros_basic_simulator" pkg="ros_basic_simulator" type="simulator.py" output="screen"/>
+</launch>
+
