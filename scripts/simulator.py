@@ -3,8 +3,11 @@
 from PIL import Image 
 import numpy as np
 import rospy
+import time
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan
+from rosgraph_msgs.msg import Clock
+
 
 class Simulator:
     def __init__(self, filename, resolution, laser_min_angle, laser_max_angle, laser_resolution, laser_max_dist):
@@ -49,7 +52,9 @@ class Simulator:
             if is_hit:
                 laser_data.append(np.sqrt((xp-self.robot_x)**2+(yp-self.robot_y)**2))
             else:
-                laser_data.append(self.laser_max_dist)
+                # if goes beyond max dist return max dist or nan
+                #laser_data.append(self.laser_max_dist)
+                laser_data.append(float('nan'))
         return np.array(laser_data)
 
     def raycast(self, x0, y0, theta, max_dist, debug=False):    #x0, y0, max_dist in meters; theta in radian;  debug is for visulizations
@@ -101,32 +106,43 @@ class SimulatorROS:
         self.laser_min_angle = rospy.get_param('~laser_min_angle', -135)
         self.laser_max_angle = rospy.get_param('~laser_max_angle', 135)
         self.laser_resolution = rospy.get_param('~laser_resolution', 1)
+        self.laser_noise_mu = rospy.get_param('~laser_noise_mu', 0.1)
+        self.laser_noise_sigma = rospy.get_param('~laser_noise_sigma', 0.02)
         self.laser_max_dist = rospy.get_param('~laser_max_dist', 15.0)
         self.robot_pos_x = rospy.get_param('~robot_pos_x', 1.5)
         self.robot_pos_y = rospy.get_param('~robot_pos_y', 1.5)
         self.robot_pos_theta = rospy.get_param('~robot_pos_theta', 45)
         self.map_file = rospy.get_param('~map_file', 'map.png')
 
+        self.scan = LaserScan()
+        self.scan.header.frame_id = "laser"
+        self.scan.angle_min = np.radians(self.laser_min_angle)
+        self.scan.angle_max = np.radians(self.laser_max_angle)
+        self.scan.angle_increment = np.radians(self.laser_resolution)
+        self.scan.range_max = self.laser_max_dist
+
+        self.sim_time = 0.0
+
         self.simulator = Simulator(self.map_file, self.map_resolution, self.laser_min_angle, self.laser_max_angle, self.laser_resolution, self.laser_max_dist)
         self.simulator.set_robot_pos(self.robot_pos_x, self.robot_pos_y, np.radians(self.robot_pos_theta)) # robot start point
 
         self.laser_pub = rospy.Publisher('scan', LaserScan, queue_size=2)
         self.cmd_sub = rospy.Subscriber("cmd_vel", Twist, self.cmdvel_callback)
+        self.time_pub = rospy.Publisher('/clock', Clock, queue_size=2)
 
-    def publish_laserscan(self, data):
-        scan = LaserScan()
-        scan.header.frame_id = "laser"
-        scan.header.stamp = rospy.Time().now()
-        scan.angle_min = np.radians(self.laser_min_angle)
-        scan.angle_max = np.radians(self.laser_max_angle)
-        scan.angle_increment = np.radians(self.laser_resolution)
-        scan.range_max = self.laser_max_dist
-        scan.ranges = data
-        self.laser_pub.publish(scan)
+    def process_laserscan(self, data):
+        data += np.random.normal(self.laser_noise_mu, self.laser_noise_sigma, data.shape) # apply gaussian noise
+        self.scan.header.stamp = rospy.Time.from_sec(self.sim_time)
+        self.scan.ranges = data
+        self.laser_pub.publish(self.scan)
+
+    def publish_time(self, t):
+        ros_t = rospy.Time.from_sec(t)
+        self.time_pub.publish(ros_t)
 
     def process_cmdvel(self):
         if len(self.cmdvel_queue)>0:
-            new_dt = self.time_resolution / len(self.cmdvel_queue)
+            new_dt = self.time_resolution / len(self.cmdvel_queue) # approximated that time diff between commands have the same period
             for i in self.cmdvel_queue:
                 self.simulator.robot_theta += i['ang'] * new_dt
                 self.simulator.robot_x += i['lin'] * np.cos(self.simulator.robot_theta) * new_dt
@@ -136,12 +152,21 @@ class SimulatorROS:
     def cmdvel_callback(self, data):
         self.cmdvel_queue.append({'lin': data.linear.x, 'ang': data.angular.z})
 
-    def spin(self):
-        rate = rospy.Rate(1.0 / self.time_resolution)
-        while not rospy.is_shutdown():
+    def tick(self):
             self.process_cmdvel()
-            self.publish_laserscan(self.simulator.get_measurements())
-            rate.sleep()
+            self.process_laserscan(self.simulator.get_measurements())
+            self.publish_time(self.sim_time)
+            self.sim_time += self.time_resolution
+
+    def spin(self):
+        while not rospy.is_shutdown():
+            start_t = time.time()
+            self.tick()
+            elapsed_t = time.time() - start_t
+            remaining_t = self.time_resolution - elapsed_t
+            if (remaining_t > 0):
+                time.sleep(remaining_t)
+
 
 sim = SimulatorROS()
 sim.spin()

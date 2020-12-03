@@ -1,9 +1,15 @@
 <?xml version="1.0"?>
 
 <launch>
+    <param name="use_sim_time" value="true"/>
+
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find basic_robot_simulator)/launch/rviz.rviz"/>
+
     <node name="basic_robot_simulator" pkg="basic_robot_simulator" type="simulator.py" output="screen">
         <param name="map_file" value="$(find basic_robot_simulator)/launch/map.png"/>
+        <param name="laser_noise_mu" value="0.0"/>
+        <param name="laser_noise_sigma" value="0.0"/>
     </node>
+
 </launch>
 
