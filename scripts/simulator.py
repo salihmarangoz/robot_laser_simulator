@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from PIL import Image 
 import numpy as np
 import rospy
@@ -7,7 +9,7 @@ from sensor_msgs.msg import LaserScan
 class Simulator:
     def __init__(self, filename, resolution, laser_min_angle, laser_max_angle, laser_resolution, laser_max_dist):
         img = Image.open(filename)
-        img = img.convert('1')
+        img = img.convert('1') # to gray image
         self.gridmap = 1.0 - np.asarray(img)
         self.gridmap = np.around(self.gridmap)
         self.resolution = resolution   # map resolution
@@ -17,7 +19,7 @@ class Simulator:
         self.laser_max_dist = laser_max_dist      #meter
         self.robot_x = 0.0                        #meter
         self.robot_y = 0.0                        #meter
-        self.robot_theta = 0.0                    #radian  
+        self.robot_theta = 0.0                    #radian
 
     def to_xy (self, i, j):
         x = j * self.resolution
@@ -113,17 +115,17 @@ class SimulatorROS:
         scan = LaserScan()
         scan.header.frame_id = "laser"
         scan.header.stamp = rospy.Time().now()
-        scan.angle_min = np.radians(laser_min_angle)
-        scan.angle_max = np.radians(laser_max_angle)
-        scan.angle_increment = np.radians(laser_resolution)
-        scan.range_max = laser_max_dist
+        scan.angle_min = np.radians(self.laser_min_angle)
+        scan.angle_max = np.radians(self.laser_max_angle)
+        scan.angle_increment = np.radians(self.laser_resolution)
+        scan.range_max = self.laser_max_dist
         scan.ranges = data
         self.laser_pub.publish(scan)
 
-    def process_cmdvel(self, cmdvel_list):
-        if len(cmdvel_list)>0:
-            new_dt = dt / len(cmdvel_list)
-            for i in cmdvel_list:
+    def process_cmdvel(self):
+        if len(self.cmdvel_queue)>0:
+            new_dt = self.time_resolution / len(self.cmdvel_queue)
+            for i in self.cmdvel_queue:
                 self.simulator.robot_theta += i['ang'] * new_dt
                 self.simulator.robot_x += i['lin'] * np.cos(self.simulator.robot_theta) * new_dt
                 self.simulator.robot_y += i['lin'] * np.sin(self.simulator.robot_theta) * new_dt
@@ -132,11 +134,11 @@ class SimulatorROS:
     def cmdvel_callback(self, data):
         self.cmdvel_queue.append({'lin': data.linear.x, 'ang': data.angular.z})
 
-    def spin():
-        rate = rospy.Rate(1.0/dt)
+    def spin(self):
+        rate = rospy.Rate(1.0 / self.time_resolution)
         while not rospy.is_shutdown():
-            process_cmdvel(cmdvel_queue)
-            publish_laserscan( self.simulator.get_measurements(debug=True) )
+            self.process_cmdvel()
+            self.publish_laserscan(self.simulator.get_measurements())
             rate.sleep()
 
 sim = SimulatorROS()
