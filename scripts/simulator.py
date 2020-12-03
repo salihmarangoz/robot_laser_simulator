@@ -65,7 +65,7 @@ class Simulator:
     #bresenham method is used to plot the lines
     def bresenham (self, i0, j0, i1, j1, max_dist_cells, debug=False):   # i0, j0 (starting point)
         dx = np.absolute(j1-j0)
-        dy = -1 *  np.absolute(i1-i0)
+        dy = -1 * np.absolute(i1-i0)
         sx = -1
         if j0<j1:
             sx = 1
@@ -88,6 +88,8 @@ class Simulator:
             if e2 <= dx:                # e_xy+e_y < 0
                 err += dx
                 ip += sy
+
+
 
 class SimulatorROS:
     def __init__(self):
