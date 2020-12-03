@@ -32,7 +32,7 @@ class Simulator:
     def to_ij (self, x, y):
         i = self.gridmap.shape[0] - (y / self.resolution)
         j = x / self.resolution
-        return int(i), int(j)
+        return i, j
 
     def is_inside (self, i, j):
         return i<self.gridmap.shape[0] and j<self.gridmap.shape[1] and i>=0 and j>=0
@@ -47,7 +47,7 @@ class Simulator:
 
     def get_measurements(self, debug=False):
         laser_data = []
-        for i in range(self.laser_min_angle, self.laser_max_angle+1, self.laser_resolution):
+        for i in np.arange(self.laser_min_angle, self.laser_max_angle+self.laser_resolution, self.laser_resolution):
             xp, yp, is_hit = self.raycast(self.robot_x, self.robot_y, np.radians(i) + self.robot_theta, self.laser_max_dist, debug)
             if is_hit:
                 laser_data.append(np.sqrt((xp-self.robot_x)**2+(yp-self.robot_y)**2))
@@ -101,7 +101,7 @@ class SimulatorROS:
         self.cmdvel_queue = []
 
         rospy.init_node('RosSimulator', anonymous=True)
-        self.map_resolution = rospy.get_param('~map_resolution', 0.1)
+        self.map_resolution = rospy.get_param('~map_resolution', 0.05)
         self.time_resolution = rospy.get_param('~time_resolution', 0.1) # dt
         self.laser_min_angle = rospy.get_param('~laser_min_angle', -135)
         self.laser_max_angle = rospy.get_param('~laser_max_angle', 135)
@@ -142,11 +142,12 @@ class SimulatorROS:
 
     def process_cmdvel(self):
         if len(self.cmdvel_queue)>0:
-            new_dt = self.time_resolution / len(self.cmdvel_queue) # approximated that time diff between commands have the same period
+            dt = self.time_resolution / len(self.cmdvel_queue) # approximated that time diff between commands have the same period
             for i in self.cmdvel_queue:
-                self.simulator.robot_theta += i['ang'] * new_dt
-                self.simulator.robot_x += i['lin'] * np.cos(self.simulator.robot_theta) * new_dt
-                self.simulator.robot_y += i['lin'] * np.sin(self.simulator.robot_theta) * new_dt
+                self.simulator.robot_theta += i['ang'] * dt
+                self.simulator.robot_theta = (self.simulator.robot_theta + 2 * np.pi) % (2 * np.pi) 
+                self.simulator.robot_x += i['lin'] * np.cos(self.simulator.robot_theta) * dt
+                self.simulator.robot_y += i['lin'] * np.sin(self.simulator.robot_theta) * dt
             self.cmdvel_queue = []
 
     def cmdvel_callback(self, data):
