@@ -7,8 +7,17 @@
 
     <node name="basic_robot_simulator" pkg="basic_robot_simulator" type="simulator.py" output="screen">
         <param name="map_file" value="$(find basic_robot_simulator)/launch/map.png"/>
-        <!--<param name="laser_noise_mu" value="0.0"/>
-        <param name="laser_noise_sigma" value="0.0"/>-->
+        <param name="map_resolution" value="0.05"/> <!-- meters per cell -->
+        <param name="time_resolution" value="0.1"/> <!-- time diff between simulator ticks in seconds -->
+        <param name="laser_min_angle" value="-135"/> <!-- laser start angle in degrees -->
+        <param name="laser_max_angle" value="135"/> <!-- laser end angle in degrees -->
+        <param name="laser_resolution" value="1"/> <!-- angle between two laser rays in degrees -->
+        <param name="laser_noise_mu" value="0.1"/> <!-- additive normal distribution noise -->
+        <param name="laser_noise_sigma" value="0.02"/> <!-- additive normal distribution noise -->
+        <param name="laser_max_dist" value="15.0"/> <!-- rays exceeding this value will be converted no NaN -->
+        <param name="robot_pos_x" value="2.0"/>
+        <param name="robot_pos_y" value="2.0"/>
+        <param name="robot_pos_theta" value="0"/>
     </node>
 
 </launch>

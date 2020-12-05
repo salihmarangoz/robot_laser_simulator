@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /LaserScan1
       Splitter Ratio: 0.5
     Tree Height: 796
   - Class: rviz/Selection
@@ -48,7 +49,7 @@ Visualization Manager:
         Y: 0
         Z: 0
       Plane: XY
-      Plane Cell Count: 10
+      Plane Cell Count: 100
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/Axes
@@ -81,7 +82,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.05000000074505806
+      Size (m): 0.10000000149011612
       Style: Spheres
       Topic: /scan
       Unreliable: false
@@ -116,25 +117,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 8.17039680480957
+      Distance: 11.478819847106934
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.0943176746368408
-        Y: -1.633388638496399
+        X: -1.2007777690887451
+        Y: -1.225448727607727
         Z: 3.814697265625e-6
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8303979635238647
+      Pitch: 0.6247972249984741
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 3.540415048599243
+      Yaw: 3.470414876937866
     Saved: ~
 Window Geometry:
   Displays:

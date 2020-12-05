@@ -101,6 +101,7 @@ class SimulatorROS:
         self.cmdvel_queue = []
 
         rospy.init_node('RosSimulator', anonymous=True)
+        self.map_file = rospy.get_param('~map_file', 'map.png')
         self.map_resolution = rospy.get_param('~map_resolution', 0.05)
         self.time_resolution = rospy.get_param('~time_resolution', 0.1) # dt
         self.laser_min_angle = rospy.get_param('~laser_min_angle', -135)
@@ -109,10 +110,9 @@ class SimulatorROS:
         self.laser_noise_mu = rospy.get_param('~laser_noise_mu', 0.1)
         self.laser_noise_sigma = rospy.get_param('~laser_noise_sigma', 0.02)
         self.laser_max_dist = rospy.get_param('~laser_max_dist', 15.0)
-        self.robot_pos_x = rospy.get_param('~robot_pos_x', 1.5)
-        self.robot_pos_y = rospy.get_param('~robot_pos_y', 1.5)
-        self.robot_pos_theta = rospy.get_param('~robot_pos_theta', 45)
-        self.map_file = rospy.get_param('~map_file', 'map.png')
+        self.robot_pos_x = rospy.get_param('~robot_pos_x', 0.0)
+        self.robot_pos_y = rospy.get_param('~robot_pos_y', 0.0)
+        self.robot_pos_theta = rospy.get_param('~robot_pos_theta', 0)
 
         self.scan = LaserScan()
         self.scan.header.frame_id = "laser"
