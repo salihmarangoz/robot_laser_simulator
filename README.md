@@ -1,8 +1,10 @@
 # basic_robot_simulator
 
-Simple robot simulator ROS package using Bresenham ray-casting algorithm.
+Simple robot simulator ROS package using Bresenham ray-casting algorithm. Example visualization of the simulator in RViz:
 
 ![rviz](rviz.gif)
+
+The given map for the simulator (The robot in the GIF above starting on left bottom side of the map):
 
 ![map](launch/map.png)
 
