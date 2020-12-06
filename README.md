@@ -4,6 +4,8 @@ Simple robot simulator ROS package using Bresenham ray-casting algorithm.
 
 ![rviz](rviz.gif)
 
+![map](launch/map.png)
+
 ## Features
 
 - ROS (outputs `/scan` and inputs `/cmd_vel`)
