@@ -145,7 +145,7 @@ class SimulatorROS:
 
     def publish_odom(self, x, y, theta):
         q = tf_conversions.transformations.quaternion_from_euler(0, 0, theta)
-        self.tf_pub.sendTransform((x,y,0.0), q, rospy.Time.from_sec(self.sim_time), 'base_link', 'odom')
+        self.tf_pub.sendTransform((x,y,0.0), q, rospy.Time.from_sec(self.sim_time), 'base_link', 'map')
 
     def process_cmdvel(self):
         if len(self.cmdvel_queue)>0:
