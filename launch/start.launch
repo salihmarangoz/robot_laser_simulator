@@ -10,7 +10,7 @@
     <node name="basic_robot_simulator" pkg="basic_robot_simulator" type="simulator.py" output="screen">
         <param name="map_file" value="$(find basic_robot_simulator)/launch/map.png"/>
         <param name="map_resolution" value="0.05"/> <!-- meters per cell -->
-        <param name="time_resolution" value="0.1"/> <!-- time diff between simulator ticks in seconds -->
+        <param name="time_resolution" value="0.2"/> <!-- time diff between simulator ticks in seconds -->
         <param name="laser_min_angle" value="-135"/> <!-- laser start angle in degrees -->
         <param name="laser_max_angle" value="135"/> <!-- laser end angle in degrees -->
         <param name="laser_resolution" value="1"/> <!-- angle between two laser rays in degrees -->
