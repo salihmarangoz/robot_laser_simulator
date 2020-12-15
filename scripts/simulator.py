@@ -7,6 +7,8 @@ import time
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan
 from rosgraph_msgs.msg import Clock
+import tf_conversions
+from tf import TransformBroadcaster
 
 
 class Simulator:
@@ -129,8 +131,9 @@ class SimulatorROS:
         self.laser_pub = rospy.Publisher('scan', LaserScan, queue_size=2)
         self.cmd_sub = rospy.Subscriber("cmd_vel", Twist, self.cmdvel_callback)
         self.time_pub = rospy.Publisher('/clock', Clock, queue_size=2)
+        self.tf_pub = TransformBroadcaster()
 
-    def process_laserscan(self, data):
+    def publish_laserscan(self, data):
         data += np.random.normal(self.laser_noise_mu, self.laser_noise_sigma, data.shape) # apply gaussian noise
         self.scan.header.stamp = rospy.Time.from_sec(self.sim_time)
         self.scan.ranges = data
@@ -139,6 +142,10 @@ class SimulatorROS:
     def publish_time(self, t):
         ros_t = rospy.Time.from_sec(t)
         self.time_pub.publish(ros_t)
+
+    def publish_odom(self, x, y, theta):
+        q = tf_conversions.transformations.quaternion_from_euler(0, 0, theta)
+        self.tf_pub.sendTransform((x,y,0.0), q, rospy.Time.from_sec(self.sim_time), 'base_link', 'odom')
 
     def process_cmdvel(self):
         if len(self.cmdvel_queue)>0:
@@ -155,7 +162,8 @@ class SimulatorROS:
 
     def tick(self):
             self.process_cmdvel()
-            self.process_laserscan(self.simulator.get_measurements())
+            self.publish_laserscan(self.simulator.get_measurements()) # also applies noise
+            self.publish_odom(self.simulator.robot_x, self.simulator.robot_y, self.simulator.robot_theta)
             self.publish_time(self.sim_time)
             self.sim_time += self.time_resolution
 

@@ -12,7 +12,7 @@ The given map for the simulator (The robot in the GIF above starting on left bot
 
 - ROS (outputs `/scan` and inputs `/cmd_vel`)
 - Publishes simulator clock on ROS (so other nodes can adapt to the simulator speed rate)
-
+- Publishes `odom`->`base_link` transform. (No noise implemented yet)
 - Laser noise (gaussian mu and variance)
 - Easy to read. Maybe? :)
 
