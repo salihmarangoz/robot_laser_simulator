@@ -100,8 +100,11 @@ class Simulator:
 
 class SimulatorROS:
     def __init__(self):
+        # OTHER GLOBAL VARIABLES
         self.cmdvel_queue = []
+        self.sim_time = 0.0
 
+        # ROS PARAMETERS
         rospy.init_node('RosSimulator', anonymous=True)
         self.map_file = rospy.get_param('~map_file', 'map.png')
         self.map_resolution = rospy.get_param('~map_resolution', 0.05)
@@ -115,21 +118,25 @@ class SimulatorROS:
         self.robot_pos_x = rospy.get_param('~robot_pos_x', 0.0)
         self.robot_pos_y = rospy.get_param('~robot_pos_y', 0.0)
         self.robot_pos_theta = rospy.get_param('~robot_pos_theta', 0)
+        self.odom_frame = rospy.get_param('~odom_frame', "")
+        self.robot_frame = rospy.get_param('~robot_frame', "base_link")
+        self.laser_frame = rospy.get_param('~laser_frame', "laser")
 
+        # SCAN MESSAGE TEMPLATE
         self.scan = LaserScan()
-        self.scan.header.frame_id = "laser"
+        self.scan.header.frame_id = self.laser_frame
         self.scan.angle_min = np.radians(self.laser_min_angle)
         self.scan.angle_max = np.radians(self.laser_max_angle)
         self.scan.angle_increment = np.radians(self.laser_resolution)
         self.scan.range_max = self.laser_max_dist
 
-        self.sim_time = 0.0
-
+        # INIT SIMULATOR
         self.simulator = Simulator(self.map_file, self.map_resolution, self.laser_min_angle, self.laser_max_angle, self.laser_resolution, self.laser_max_dist)
         self.simulator.set_robot_pos(self.robot_pos_x, self.robot_pos_y, np.radians(self.robot_pos_theta)) # robot start point
 
-        self.laser_pub = rospy.Publisher('scan', LaserScan, queue_size=2)
-        self.cmd_sub = rospy.Subscriber("cmd_vel", Twist, self.cmdvel_callback)
+        # INIT ROS PUBLISHER/SUBSCRIBERS
+        self.laser_pub = rospy.Publisher('/scan', LaserScan, queue_size=2)
+        self.cmd_sub = rospy.Subscriber("/cmd_vel", Twist, self.cmdvel_callback)
         self.time_pub = rospy.Publisher('/clock', Clock, queue_size=2)
         self.tf_pub = TransformBroadcaster()
 
@@ -143,9 +150,11 @@ class SimulatorROS:
         ros_t = rospy.Time.from_sec(t)
         self.time_pub.publish(ros_t)
 
+    # NOTE: laser_frame -> robot_frame transform is published by static_transform_publisher node in launch file
     def publish_odom(self, x, y, theta):
-        q = tf_conversions.transformations.quaternion_from_euler(0, 0, theta)
-        self.tf_pub.sendTransform((x,y,0.0), q, rospy.Time.from_sec(self.sim_time), 'base_link', 'map')
+        if self.odom_frame != "":
+            q = tf_conversions.transformations.quaternion_from_euler(0, 0, theta)
+            self.tf_pub.sendTransform((x,y,0.0), q, rospy.Time.from_sec(self.sim_time), self.robot_frame, self.odom_frame)
 
     def process_cmdvel(self):
         if len(self.cmdvel_queue)>0:
