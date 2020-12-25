@@ -3,12 +3,12 @@
 <launch>
     <param name="use_sim_time" value="true"/>
 
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find basic_robot_simulator)/launch/rviz.rviz"/>
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find robot_laser_simulator)/launch/rviz.rviz"/>
 
     <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0 0 0 0 0 0 1 base_link laser 100" />
 
-    <node name="basic_robot_simulator" pkg="basic_robot_simulator" type="simulator.py" output="screen">
-        <param name="map_file" value="$(find basic_robot_simulator)/launch/map.png"/>
+    <node name="robot_laser_simulator" pkg="robot_laser_simulator" type="simulator.py" output="screen">
+        <param name="map_file" value="$(find robot_laser_simulator)/launch/map.png"/>
         <param name="map_resolution" value="0.05"/> <!-- meters per cell -->
         <param name="time_resolution" value="0.1"/> <!-- time diff between simulator ticks in seconds -->
         <param name="laser_min_angle" value="-135"/> <!-- laser start angle in degrees -->

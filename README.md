@@ -1,4 +1,4 @@
-# Basic Robot Simulator (ROS)
+# Robot Laser Simulator (ROS)
 
 Simple robot simulator ROS package using Bresenham ray-casting algorithm. Example visualization in RViz can be watched from Youtube (https://www.youtube.com/watch?v=8J_atau72BQ) and can be seen from the GIF below:
 
