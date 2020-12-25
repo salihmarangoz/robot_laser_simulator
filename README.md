@@ -19,7 +19,7 @@ The given map for the simulator (The robot in the GIF above starting on left bot
 ## Running
 
 ```bash
-$ roslaunch basic_robot_simulator start.launch  # => there are modifiable parameters in this file with descriptions
+$ roslaunch robot_laser_simulator start.launch  # => there are modifiable parameters in this file with descriptions
 $ rosrun rqt_robot_steering rqt_robot_steering  # => you can use this command for manually controlling the robot
 ```
 
